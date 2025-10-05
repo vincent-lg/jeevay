@@ -1,0 +1,19 @@
+[project]
+name = "jeevay"
+version = "0.1.0"
+description = "An accessible ASCII map of your neighborhood"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "accessible-output3",
+    "requests>=2.31.0",
+    "wxpython>=4.2.0",
+]
+
+[tool.uv.sources]
+accessible-output3 = { git = "https://github.com/SigmaNight/accessible_output3" }
+
+[dependency-groups]
+dev = [
+    "nuitka>=2.7.16",
+]
