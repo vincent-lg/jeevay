@@ -56,6 +56,7 @@ class MainWindow(wx.Frame):
                   "• Ctrl+N: Enter new address\n"
                   "• Tab: Get details at cursor position\n"
                   "• Ctrl+S: Get map summary\n"
+                  "• +/-: Zoom in/out\n"
                   "• Arrow keys: Navigate the map"
         )
 
@@ -246,6 +247,33 @@ class MainWindow(wx.Frame):
         except ImportError:
             # Dev console not available
             pass
+
+    def on_zoom_changed(self):
+        """Handle zoom changes from the map display."""
+        if not self.current_network:
+            return
+
+        # Re-render the map with the new zoom level
+        map_lines = self.renderer.render_map(self.current_network)
+
+        # Get current cursor position before updating
+        grid_x, grid_y = self.map_display.get_cursor_grid_position()
+
+        # Update the display
+        self.map_display.set_map_data(self.current_network, map_lines)
+
+        # Restore cursor position (same grid coordinates)
+        self.map_display.set_cursor_position(grid_x, grid_y)
+
+        # Update status bar with zoom level
+        zoom_level = self.current_network.get_current_zoom_level()
+        if self.current_address:
+            self.SetStatusText(
+                f"{self.current_address.display_name} - "
+                f"Scale: {zoom_level:.1f}m/char"
+            )
+        else:
+            self.SetStatusText(f"Scale: {zoom_level:.1f} meters per character")
 
     def on_close(self, event):
         """Handle window close event."""

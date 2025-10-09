@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from jeevay.api.models import Street, Intersection, PedestrianPath, Building
 from jeevay.mapping.coordinate_system import LocalProjection, GridMapper, BoundingBox
 from jeevay.mapping.viewport import ViewportGrid, ViewportConfig, ViewportCalculator
+from jeevay.mapping.map_cache import MapDataCache
 
 
 @dataclass
@@ -52,10 +53,13 @@ class StreetNetwork:
     """Internal representation of street network for rendering."""
 
     def __init__(self, viewport_config: ViewportConfig = None):
+        # Data cache stores raw API data
+        self.data_cache = MapDataCache()
         self.streets: list[Street] = []
         self.intersections: list[Intersection] = []
         self.pedestrian_paths: list[PedestrianPath] = []
         self.buildings: list[Building] = []
+
         self.projection: LocalProjection | None = None
         self.grid_mapper: GridMapper | None = None
         self.viewport_grid: ViewportGrid | None = None
@@ -76,18 +80,22 @@ class StreetNetwork:
     def add_streets(self, streets: list[Street]):
         """Add streets to the network."""
         self.streets.extend(streets)
+        self.data_cache.streets.extend(streets)
 
     def add_intersections(self, intersections: list[Intersection]):
         """Add intersections to the network."""
         self.intersections.extend(intersections)
+        self.data_cache.intersections.extend(intersections)
 
     def add_pedestrian_paths(self, paths: list[PedestrianPath]):
         """Add pedestrian paths to the network."""
         self.pedestrian_paths.extend(paths)
+        self.data_cache.pedestrian_paths.extend(paths)
 
     def add_buildings(self, buildings: list[Building]):
         """Add buildings to the network."""
         self.buildings.extend(buildings)
+        self.data_cache.buildings.extend(buildings)
 
     def build_grid(self, center_lat: float, center_lon: float):
         """Build the internal grid representation using viewport system."""
@@ -282,3 +290,77 @@ class StreetNetwork:
     def get_required_radius(self) -> int:
         """Get the radius needed to ensure complete viewport coverage."""
         return self.viewport_calculator.calculate_required_radius()
+
+    def rebuild_grid(self, new_center_lat: float, new_center_lon: float, new_viewport_config: ViewportConfig = None):
+        """
+        Rebuild the grid with a new center and/or viewport configuration.
+        Uses cached data, so no API calls needed.
+        """
+        if new_viewport_config:
+            self.viewport_config = new_viewport_config
+            self.grid_width = self.viewport_config.width
+            self.grid_height = self.viewport_config.height
+            self.viewport_calculator = ViewportCalculator(self.viewport_config)
+
+        # Rebuild grid at new center
+        self.build_grid(new_center_lat, new_center_lon)
+
+    def zoom_at_cursor(self, cursor_grid_x: int, cursor_grid_y: int, zoom_factor: float) -> bool:
+        """
+        Zoom in/out while keeping the cursor position fixed on the same geographic point.
+
+        Args:
+            cursor_grid_x: Grid X position of cursor
+            cursor_grid_y: Grid Y position of cursor
+            zoom_factor: Multiplier for zoom (e.g., 0.5 = zoom in 2x, 2.0 = zoom out 2x)
+
+        Returns:
+            True if zoom succeeded, False if zoom would exceed limits
+        """
+        if not self.projection or not self.viewport_grid:
+            return False
+
+        # Calculate new cell size
+        current_cell_size = self.viewport_config.cell_size_meters
+        new_cell_size = current_cell_size * zoom_factor
+
+        # Enforce minimum zoom level (10 meters per cell)
+        MIN_CELL_SIZE = 10.0
+        MAX_CELL_SIZE = 100.0  # Maximum zoom out
+
+        if new_cell_size < MIN_CELL_SIZE or new_cell_size > MAX_CELL_SIZE:
+            return False  # Zoom limit reached
+
+        # Convert cursor grid position to meters from current center
+        meters_from_center_x = (cursor_grid_x - self.grid_width / 2) * current_cell_size
+        meters_from_center_y = -(cursor_grid_y - self.grid_height / 2) * current_cell_size  # Y is flipped
+
+        # Convert to lat/lon (the point we want to keep under cursor)
+        cursor_point_lat, cursor_point_lon = self.projection.meters_to_latlon(
+            meters_from_center_x, meters_from_center_y
+        )
+
+        # At new scale, cursor should be at this offset from center:
+        new_meters_from_center_x = (cursor_grid_x - self.grid_width / 2) * new_cell_size
+        new_meters_from_center_y = -(cursor_grid_y - self.grid_height / 2) * new_cell_size
+
+        # Work backwards: if cursor point should be at this offset, what's the new center?
+        temp_projection = LocalProjection(cursor_point_lat, cursor_point_lon)
+        new_center_lat, new_center_lon = temp_projection.meters_to_latlon(
+            -new_meters_from_center_x, -new_meters_from_center_y
+        )
+
+        new_config = ViewportConfig(
+            width=self.viewport_config.width,
+            height=self.viewport_config.height,
+            cell_size_meters=new_cell_size,
+            margin_factor=self.viewport_config.margin_factor,
+        )
+
+        self.rebuild_grid(new_center_lat, new_center_lon, new_config)
+
+        return True
+
+    def get_current_zoom_level(self) -> float:
+        """Get current zoom level as cell size in meters."""
+        return self.viewport_config.cell_size_meters

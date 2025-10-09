@@ -9,18 +9,16 @@ accessible ASCII format for use with Braille displays and screen readers.
 import sys
 import os
 
-# Add project root to Python path
-#project_root = os.path.dirname(os.path.abspath(__file__))
-#sys.path.insert(0, project_root)
-
 import wx
 
+from jeevay.screen_reader import ScreenReader as SR
 from jeevay.ui.main_window import JeevayApp
 
 
 def main():
     """Main application entry point."""
     try:
+        SR.setup()
         app = JeevayApp()
         app.MainLoop()
     except Exception as e:
