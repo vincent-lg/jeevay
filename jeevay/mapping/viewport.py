@@ -14,7 +14,7 @@ class ViewportConfig:
 class ViewportCalculator:
     """Calculates viewport parameters and radius requirements."""
 
-    def __init__(self, config: ViewportConfig = None):
+    def __init__(self, config: ViewportConfig | None = None):
         self.config = config or ViewportConfig()
 
     def calculate_required_radius(self) -> int:
@@ -24,7 +24,9 @@ class ViewportCalculator:
         height_meters = self.config.height * self.config.cell_size_meters
 
         # Distance from center to corner (half diagonal)
-        diagonal_half = math.sqrt((width_meters/2)**2 + (height_meters/2)**2)
+        diagonal_half = math.sqrt(
+            (width_meters / 2) ** 2 + (height_meters / 2) ** 2
+        )
 
         # Add margin and round up
         required_radius = int(diagonal_half * self.config.margin_factor) + 1
@@ -34,7 +36,9 @@ class ViewportCalculator:
     def get_viewport_bounds_meters(self, center_lat: float, center_lon: float) -> tuple[float, float, float, float]:
         """Get viewport bounds in meters relative to center.
 
-        Returns: (min_x, max_x, min_y, max_y) in meters
+        Returns:
+            (min_x, max_x, min_y, max_y) in meters
+
         """
         half_width = (self.config.width * self.config.cell_size_meters) / 2
         half_height = (self.config.height * self.config.cell_size_meters) / 2
@@ -50,7 +54,7 @@ class ViewportCalculator:
 class ViewportGrid:
     """Manages a fixed-size viewport grid with coordinates beyond visible area."""
 
-    def __init__(self, config: ViewportConfig = None):
+    def __init__(self, config: ViewportConfig | None = None):
         self.config = config or ViewportConfig()
         self.calculator = ViewportCalculator(config)
 
@@ -88,6 +92,7 @@ class ViewportGrid:
         """Convert meter coordinates to extended grid coordinates.
 
         This includes coordinates outside the viewport for data storage.
+
         """
         # Convert to grid cells with extended bounds centered
         grid_x = int(x_meters / self.config.cell_size_meters + self.extended_width / 2)
@@ -97,16 +102,23 @@ class ViewportGrid:
 
     def is_valid_extended_position(self, grid_x: int, grid_y: int) -> bool:
         """Check if position is valid within extended grid."""
-        return 0 <= grid_x < self.extended_width and 0 <= grid_y < self.extended_height
+        return (
+            0 <= grid_x < self.extended_width
+            and 0 <= grid_y < self.extended_height
+        )
 
     def is_valid_viewport_position(self, grid_x: int, grid_y: int) -> bool:
         """Check if position is valid within visible viewport."""
-        return 0 <= grid_x < self.visible_width and 0 <= grid_y < self.visible_height
+        return (
+            0 <= grid_x < self.visible_width
+            and 0 <= grid_y < self.visible_height
+        )
 
     def extended_to_viewport_coords(self, ext_x: int, ext_y: int) -> tuple[int, int]:
         """Convert extended grid coordinates to viewport coordinates.
 
         Returns (-1, -1) if outside viewport.
+
         """
         viewport_x = ext_x - self.viewport_offset_x
         viewport_y = ext_y - self.viewport_offset_y

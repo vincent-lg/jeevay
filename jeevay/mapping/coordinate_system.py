@@ -90,10 +90,10 @@ class BoundingBox:
     """Helper class for managing coordinate bounds."""
 
     def __init__(self):
-        self.min_lat = float('inf')
-        self.max_lat = float('-inf')
-        self.min_lon = float('inf')
-        self.max_lon = float('-inf')
+        self.min_lat = float("inf")
+        self.max_lat = float("-inf")
+        self.min_lon = float("inf")
+        self.max_lon = float("-inf")
 
     def add_coordinate(self, lat: float, lon: float):
         """Add a coordinate to the bounding box."""
@@ -110,7 +110,9 @@ class BoundingBox:
 
     def is_valid(self) -> bool:
         """Check if the bounding box contains valid coordinates."""
-        return (self.min_lat != float('inf') and
-                self.max_lat != float('-inf') and
-                self.min_lon != float('inf') and
-                self.max_lon != float('-inf'))
+        return (
+            self.min_lat != float("inf")
+            and self.max_lat != float("-inf")
+            and self.min_lon != float("inf")
+            and self.max_lon != float("-inf")
+        )

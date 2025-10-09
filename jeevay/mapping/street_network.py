@@ -61,9 +61,9 @@ class StreetNetwork:
         self.viewport_grid: ViewportGrid | None = None
         self.viewport_config = viewport_config or ViewportConfig()
 
-        # Grid storage - now uses extended grid but renders only viewport
+        # Grid storage uses extended grid but renders only viewport
         self.extended_grid: dict[tuple[int, int], GridCell] = {}
-        self.grid_width = self.viewport_config.width  # Always fixed viewport size
+        self.grid_width = self.viewport_config.width
         self.grid_height = self.viewport_config.height
 
         # Center coordinate for the map

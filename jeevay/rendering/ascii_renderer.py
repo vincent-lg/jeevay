@@ -24,7 +24,7 @@ class ASCIIRenderer:
                 line.append(char)
 
             # Convert to string and strip trailing spaces
-            line_str = ''.join(line).rstrip()
+            line_str = "".join(line).rstrip()
             lines.append(line_str)
 
         # Remove trailing empty lines

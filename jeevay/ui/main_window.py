@@ -1,3 +1,4 @@
+import sys
 import threading
 import traceback
 
@@ -28,9 +29,16 @@ class MainWindow(wx.Frame):
         self.current_address: Address | None = None
         self.current_network: StreetNetwork | None = None
 
+        # Development console
+        self.dev_console = None
+
         self.setup_ui()
         self.setup_menu()
         self.Center()
+        self.setup_dev_console()
+
+        # Bind close event
+        self.Bind(wx.EVT_CLOSE, self.on_close)
 
     def setup_ui(self):
         """Set up the main UI."""
@@ -46,7 +54,7 @@ class MainWindow(wx.Frame):
             panel,
             label="Instructions:\n"
                   "• Ctrl+N: Enter new address\n"
-                  "• Ctrl+D: Get details at cursor position\n"
+                  "• Tab: Get details at cursor position\n"
                   "• Ctrl+S: Get map summary\n"
                   "• Arrow keys: Navigate the map"
         )
@@ -223,6 +231,30 @@ class MainWindow(wx.Frame):
         """Handle search/loading errors."""
         self.SetStatusText("Error occurred")
         wx.MessageBox(f"An error occurred: {error_message}", "Error", wx.OK | wx.ICON_ERROR)
+
+    def setup_dev_console(self):
+        """Set up the development console (only when running from Python)."""
+        # Only start console if running from Python interpreter (not frozen/compiled)
+        if getattr(sys, 'frozen', False):
+            # Running as frozen executable (e.g., Nuitka, PyInstaller)
+            return
+
+        try:
+            from jeevay.ui.dev import DevConsole
+            self.dev_console = DevConsole(self)
+            self.dev_console.start()
+        except ImportError:
+            # Dev console not available
+            pass
+
+    def on_close(self, event):
+        """Handle window close event."""
+        # Stop dev console if running
+        if self.dev_console:
+            self.dev_console.stop()
+
+        # Destroy the window
+        self.Destroy()
 
 
 class JeevayApp(wx.App):

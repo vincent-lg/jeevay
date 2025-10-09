@@ -36,7 +36,7 @@ class AccessibleMapDisplay(wx.TextCtrl):
         self.map_lines = lines
 
         # Display the map
-        map_text = '\n'.join(lines)
+        map_text = "\n".join(lines)
         self.SetValue(map_text)
 
         # Set focus to beginning
@@ -47,12 +47,12 @@ class AccessibleMapDisplay(wx.TextCtrl):
         key_code = event.GetKeyCode()
 
         # Check for Ctrl+D (details)
-        if key_code == ord('\t'):
+        if key_code == ord("\t"):
             self.show_cursor_details()
             return
 
         # Check for Ctrl+S (summary)
-        if event.ControlDown() and key_code == ord('S'):
+        if event.ControlDown() and key_code == ord("S"):
             self.show_map_summary()
             return
 
