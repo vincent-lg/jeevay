@@ -33,20 +33,20 @@ class GridCell:
 
         Display rules:
         - '.' for streets (highest priority)
-        - '=' for pedestrian paths (if no street present)
-        - '#' for buildings (if no street or path present)
+        - ' ' for pedestrian paths (if no street present)
+        - ' ' for buildings (if no street or path present)
         - '+' for intersections (overrides street)
         """
         if self.is_intersection:
             return '+'
-        elif self.has_street:
-            return '.'
+        if self.has_street:
+            return "." if len(self.street_names) == 1 else "+"
         elif self.has_pedestrian_path:
-            return '='
+            return " "
         elif self.has_building:
-            return '#'
+            return " "
         else:
-            return ' '
+            return " "
 
 
 class StreetNetwork:
@@ -364,3 +364,24 @@ class StreetNetwork:
     def get_current_zoom_level(self) -> float:
         """Get current zoom level as cell size in meters."""
         return self.viewport_config.cell_size_meters
+
+    def grid_to_latlon(self, grid_x: int, grid_y: int) -> tuple[float, float]:
+        """Convert grid coordinates to latitude/longitude.
+
+        Args:
+            grid_x: Grid X position (viewport coordinates)
+            grid_y: Grid Y position (viewport coordinates)
+
+        Returns:
+            Tuple of (latitude, longitude)
+        """
+        if not self.projection or not self.viewport_grid:
+            return self.center_lat, self.center_lon
+
+        # Convert grid position to meters from center
+        meters_from_center_x = (grid_x - self.grid_width / 2) * self.viewport_config.cell_size_meters
+        meters_from_center_y = -(grid_y - self.grid_height / 2) * self.viewport_config.cell_size_meters  # Y is flipped
+
+        # Convert to lat/lon
+        lat, lon = self.projection.meters_to_latlon(meters_from_center_x, meters_from_center_y)
+        return lat, lon

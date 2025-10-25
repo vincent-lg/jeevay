@@ -63,6 +63,11 @@ class AccessibleMapDisplay(wx.TextCtrl):
             self.zoom_out()
             return
 
+        # Check for RETURN (recenter map)
+        if key_code == wx.WXK_RETURN:
+            self.recenter_map()
+            return
+
         # Allow normal navigation
         event.Skip()
 
@@ -193,3 +198,27 @@ class AccessibleMapDisplay(wx.TextCtrl):
             SR.output(f"Zoomed out. Scale: {zoom_level:.1f} meters per character")
         else:
             SR.output("Cannot zoom out further. Maximum zoom reached.")
+
+    def recenter_map(self):
+        """Recenter the map on the cursor position."""
+        if not self.network:
+            SR.output("No map loaded")
+            return
+
+        grid_x, grid_y = self.get_cursor_grid_position()
+
+        # Convert cursor position to lat/lon
+        new_center_lat, new_center_lon = self.network.grid_to_latlon(grid_x, grid_y)
+
+        # Check if we need to refetch data using MapCache
+        needs_refetch = self.network.data_cache.needs_refetch(new_center_lat, new_center_lon)
+
+        # Notify parent to recenter
+        parent = self.GetParent()
+        while parent and not hasattr(parent, 'on_recenter_map'):
+            parent = parent.GetParent()
+
+        if parent and hasattr(parent, 'on_recenter_map'):
+            parent.on_recenter_map(new_center_lat, new_center_lon, needs_refetch)
+        else:
+            SR.output("Cannot recenter map - parent window not found")
