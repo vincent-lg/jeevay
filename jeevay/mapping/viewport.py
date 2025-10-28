@@ -5,8 +5,8 @@ import math
 @dataclass
 class ViewportConfig:
     """Configuration for the viewport system."""
-    width: int = 40  # characters
-    height: int = 40  # characters
+    width: int = 30  # characters
+    height: int = 30  # characters
     cell_size_meters: float = 25.0  # meters per character
     margin_factor: float = 1.2  # extra radius margin for safety
 

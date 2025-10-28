@@ -19,7 +19,7 @@ class MainWindow(wx.Frame):
     """Main application window."""
 
     def __init__(self):
-        super().__init__(None, title="Jeevay - Accessible Geographic Demonstration", size=(800, 600))
+        super().__init__(None, title="Jeevay - Accessible Geographic Demonstration", size=(1200, 800))
 
         # Initialize APIs
         self.geocoder = NominatimGeocoder()
